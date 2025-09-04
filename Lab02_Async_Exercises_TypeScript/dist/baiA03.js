@@ -1,4 +1,6 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.rejectAfterOneSecond = rejectAfterOneSecond;
 function rejectAfterOneSecond() {
     return new Promise((_, reject) => {
         setTimeout(() => {
@@ -6,4 +8,4 @@ function rejectAfterOneSecond() {
         }, 1000);
     });
 }
-rejectAfterOneSecond().catch(resolve => console.log(resolve));
+// rejectAfterOneSecond().catch(resolve => console.log(resolve))
