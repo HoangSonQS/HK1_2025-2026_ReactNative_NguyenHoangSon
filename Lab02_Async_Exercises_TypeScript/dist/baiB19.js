@@ -9,13 +9,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.fetchUser = fetchUser;
-function fetchUser(id) {
+const baiB18_1 = require("./baiB18");
+function fetchUsers(ids) {
     return __awaiter(this, void 0, void 0, function* () {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve({ id, name: `User${id}` });
-            }, 1000);
-        });
+        const promises = ids.map(id => (0, baiB18_1.fetchUser)(id));
+        return Promise.all(promises);
     });
 }
+fetchUsers([1, 2, 3]).then(users => console.log(users));
