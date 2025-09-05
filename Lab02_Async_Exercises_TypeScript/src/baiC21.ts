@@ -1,4 +1,3 @@
-
 async function fetchTodo() {
   try {
     const response = await fetch('https://jsonplaceholder.typicode.com/todos/1');

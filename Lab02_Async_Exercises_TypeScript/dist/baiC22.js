@@ -9,20 +9,27 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-function fetchTodo() {
+function fetchTodo(id) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const response = yield fetch('https://jsonplaceholder.typicode.com/todos/1');
+            const response = yield fetch(`https://jsonplaceholder.typicode.com/todos/${id}`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const data = yield response.json();
-            console.log('Fetched data:', data);
+            console.log(`Fetched data for id ${id}:`, data);
             return data;
         }
         catch (error) {
-            console.error('Error fetching data:', error);
+            console.error(`Error fetching data for id ${id}:`, error);
         }
     });
 }
-fetchTodo();
+function fetchMultipleTodos(ids) {
+    return __awaiter(this, void 0, void 0, function* () {
+        for (const id of ids) {
+            yield fetchTodo(id);
+        }
+    });
+}
+fetchMultipleTodos([1, 2, 3, 4, 5]);
