@@ -8,6 +8,6 @@
     "rootDir": "./src", /* Thư mục gốc chứa tệp TypeScript */
     "skipLibCheck": true /* Bỏ qua kiểm tra các tệp khai báo thư viện */
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "dist/baiC24.js", "dist/baiC25.js", "dist/baiC26.js"],
   "exclude": ["node_modules"]
 }
