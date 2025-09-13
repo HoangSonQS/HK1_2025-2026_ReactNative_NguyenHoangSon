@@ -13,7 +13,7 @@ const CartSummary: React.FC<Props> = ({ cart }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.text}>
-        🛒 {totalItems} sản phẩm | Tổng tiền: {totalPrice.toLocaleString()} đ
+        {totalItems} sản phẩm | Tổng tiền: {totalPrice.toLocaleString()} đ
       </Text>
     </View>
   );
