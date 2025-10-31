@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "task-app",
-    "slug": "task-app",
+    "name": "Bai2",
+    "slug": "Bai2",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "taskapp",
+    "scheme": "bai2",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
