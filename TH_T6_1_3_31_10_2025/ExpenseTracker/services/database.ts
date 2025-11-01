@@ -1,4 +1,5 @@
 import * as SQLite from 'expo-sqlite';
+import axios from 'axios';
 
 // Định nghĩa kiểu dữ liệu (giống Câu 2, thêm isDeleted cho Câu 5)
 export interface ExpenseItem {
@@ -120,4 +121,52 @@ export const restoreExpense = async (id: number) => {
     [id]
   );
   return result;
+};
+
+// (Câu 9) Hàm đồng bộ lên MockAPI
+export const syncToAPI = async (apiUrl: string) => {
+  if (!apiUrl.includes('mockapi.io') || !apiUrl.endsWith('/expenses')) {
+    return { success: false, message: 'Link API không hợp lệ. Phải là link .../expenses' };
+  }
+
+  try {
+    // Bước 1: Lấy tất cả data đang có trên API
+    const { data: existingData } = await axios.get(apiUrl);
+
+    // Bước 2: Xóa tất cả data cũ trên API (theo yêu cầu) 
+    // Chúng ta dùng Promise.all để xóa song song cho nhanh
+    const deletePromises = existingData.map((item: { id: string }) => 
+      axios.delete(`${apiUrl}/${item.id}`)
+    );
+    await Promise.all(deletePromises);
+
+    // Bước 3: Lấy tất cả khoản thu/chi (chưa xóa) từ CSDL local
+    const localExpenses = await getExpenses();
+    if (localExpenses.length === 0) {
+      return { success: true, message: 'Không có dữ liệu local để đồng bộ.' };
+    }
+
+    // Bước 4: Tải (POST) từng khoản chi local lên API 
+    const postPromises = localExpenses.map(expense => {
+      const payload = {
+        title: expense.title,
+        amount: expense.amount,
+        createdAt: expense.createdAt,
+        type: expense.type,
+        localId: expense.id // Gửi ID của local lên
+      };
+      return axios.post(apiUrl, payload);
+    });
+    await Promise.all(postPromises);
+
+    return { success: true, message: `Đồng bộ ${localExpenses.length} khoản thu/chi thành công!` };
+
+  } catch (error) {
+    console.error(error);
+    let errorMessage = 'Lỗi không xác định';
+    if (axios.isAxiosError(error)) {
+      errorMessage = error.message;
+    }
+    return { success: false, message: `Đồng bộ thất bại: ${errorMessage}` };
+  }
 };
