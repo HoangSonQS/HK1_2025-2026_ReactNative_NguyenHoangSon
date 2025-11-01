@@ -45,10 +45,19 @@ export const addExpense = async (title: string, amount: number, type: 'thu' | 'c
 };
 
 // Hàm lấy tất cả khoản chi (chưa xóa)
-export const getExpenses = async () => {
-  const allRows: ExpenseItem[] = await db.getAllAsync<ExpenseItem>(
-    `SELECT * FROM expenses WHERE isDeleted = 0 ORDER BY id DESC;`
-  );
+export const getExpenses = async (typeFilter: 'all' | 'thu' | 'chi') => {
+  let query = `SELECT * FROM expenses WHERE isDeleted = 0`;
+  const params: any[] = [];
+
+  // (Câu 10) Thêm điều kiện lọc
+  if (typeFilter !== 'all') {
+    query += ` AND type = ?`;
+    params.push(typeFilter);
+  }
+
+  query += ` ORDER BY id DESC;`;
+  
+  const allRows: ExpenseItem[] = await db.getAllAsync<ExpenseItem>(query, params);
   return allRows;
 };
 
@@ -89,15 +98,22 @@ export const getDeletedExpenses = async () => {
 };
 
 // (Câu 6a) Hàm tìm kiếm các khoản CHƯA xóa
-export const searchExpenses = async (query: string) => {
+export const searchExpenses = async (query: string, typeFilter: 'all' | 'thu' | 'chi') => {
   const likeQuery = `%${query}%`;
-  const allRows: ExpenseItem[] = await db.getAllAsync<ExpenseItem>(
-    `SELECT * FROM expenses 
-     WHERE title LIKE ?
-     AND isDeleted = 0 
-     ORDER BY id DESC;`,
-    [likeQuery]
-  );
+  let queryStr = `SELECT * FROM expenses 
+                  WHERE title LIKE ? 
+                  AND isDeleted = 0`;
+  const params: any[] = [likeQuery];
+
+  // (Câu 10) Thêm điều kiện lọc
+  if (typeFilter !== 'all') {
+    queryStr += ` AND type = ?`;
+    params.push(typeFilter);
+  }
+  
+  queryStr += ` ORDER BY id DESC;`;
+
+  const allRows: ExpenseItem[] = await db.getAllAsync<ExpenseItem>(queryStr, params);
   return allRows;
 };
 
@@ -141,7 +157,7 @@ export const syncToAPI = async (apiUrl: string) => {
     await Promise.all(deletePromises);
 
     // Bước 3: Lấy tất cả khoản thu/chi (chưa xóa) từ CSDL local
-    const localExpenses = await getExpenses();
+    const localExpenses = await getExpenses('all');
     if (localExpenses.length === 0) {
       return { success: true, message: 'Không có dữ liệu local để đồng bộ.' };
     }
@@ -169,4 +185,32 @@ export const syncToAPI = async (apiUrl: string) => {
     }
     return { success: false, message: `Đồng bộ thất bại: ${errorMessage}` };
   }
+};
+
+// (Câu 11) Hàm lấy dữ liệu thống kê cho biểu đồ
+export const getStatisticsData = async () => {
+  // Chạy câu lệnh SQL để tính tổng Thu và tổng Chi
+  // Nó sẽ trả về một mảng, ví dụ:
+  // [ { type: 'thu', total: 1500000 }, { type: 'chi', total: 75000 } ]
+  const result: { type: 'thu' | 'chi'; total: number }[] =
+    await db.getAllAsync(
+      `SELECT type, SUM(amount) as total 
+       FROM expenses 
+       WHERE isDeleted = 0 
+       GROUP BY type;`
+    );
+
+  // Xử lý dữ liệu trả về
+  let totalThu = 0;
+  let totalChi = 0;
+
+  for (const row of result) {
+    if (row.type === 'thu') {
+      totalThu = row.total;
+    } else if (row.type === 'chi') {
+      totalChi = row.total;
+    }
+  }
+  
+  return { totalThu, totalChi };
 };
