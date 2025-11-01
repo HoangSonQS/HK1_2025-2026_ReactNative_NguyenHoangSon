@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
-import { StyleSheet, Text, View, FlatList, ActivityIndicator, Pressable } from 'react-native';
+import { StyleSheet, Text, View, FlatList, ActivityIndicator, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, Link } from 'expo-router'; 
-import { initDB, getExpenses, ExpenseItem } from '../../services/database'; 
+import { initDB, getExpenses, ExpenseItem, softDeleteExpense } from '../../services/database';
 
 export default function HomeScreen() {
   const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
@@ -28,11 +28,32 @@ export default function HomeScreen() {
     }, [loadExpenses])
   );
 
-  // (Câu 2) Hàm render mỗi item
+  const handleDeletePress = (id: number) => {
+    // (Câu 5b) Hiển thị hộp thoại xác nhận
+    Alert.alert(
+      'Xác nhận Xóa',
+      'Bạn có chắc muốn xóa khoản chi này không?',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Xóa',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await softDeleteExpense(id);
+              await loadExpenses();
+            } catch (error) {
+              console.error('Lỗi khi xóa:', error);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const renderItem = ({ item }: { item: ExpenseItem }) => (
-    // (Câu 4a) Bọc item trong Link, trỏ đến /edit/[id]
     <Link href={`/edit/${item.id}`} asChild>
-      <Pressable>
+      <Pressable onLongPress={() => handleDeletePress(item.id)}>
         <View style={styles.itemContainer}>
           <View style={styles.itemInfo}>
             <Text style={styles.itemTitle}>{item.title}</Text>
@@ -74,13 +95,12 @@ export default function HomeScreen() {
   );
 }
 
-// Thêm 2 style này
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
-  containerCenter: { // Mới
+  containerCenter: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',

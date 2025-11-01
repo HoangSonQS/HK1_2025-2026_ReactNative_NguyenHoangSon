@@ -66,3 +66,20 @@ export const updateExpense = async (id: number, title: string, amount: number, t
   );
   return result;
 };
+
+export const softDeleteExpense = async (id: number) => {
+  // Dùng UPDATE để đánh dấu là đã xóa (isDeleted = 1)
+  const result = await db.runAsync(
+    `UPDATE expenses SET isDeleted = 1 WHERE id = ?;`,
+    [id]
+  );
+  return result;
+};
+
+// (Câu 5c) Hàm lấy các khoản đã xóa
+export const getDeletedExpenses = async () => {
+  const allRows: ExpenseItem[] = await db.getAllAsync<ExpenseItem>(
+    `SELECT * FROM expenses WHERE isDeleted = 1 ORDER BY id DESC;`
+  );
+  return allRows;
+};
