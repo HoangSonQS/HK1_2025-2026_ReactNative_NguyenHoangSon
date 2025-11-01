@@ -1,10 +1,10 @@
 import React, { useState, useCallback } from 'react';
 // 1. Import TextInput
-import { StyleSheet, Text, View, FlatList, ActivityIndicator, TextInput } from 'react-native';
+import { StyleSheet, Text, View, FlatList, ActivityIndicator, TextInput, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
 // 2. Import hàm searchDeletedExpenses
-import { getDeletedExpenses, ExpenseItem, searchDeletedExpenses } from '../../services/database';
+import { getDeletedExpenses, ExpenseItem, searchDeletedExpenses, restoreExpense } from '../../services/database';
 
 export default function TrashScreen() {
   const [deletedExpenses, setDeletedExpenses] = useState<ExpenseItem[]>([]);
@@ -39,23 +39,48 @@ export default function TrashScreen() {
     }, [loadDeletedExpenses])
   );
 
+  const handleRestorePress = (id: number) => {
+    Alert.alert(
+      'Khôi phục Khoản chi',
+      'Bạn có muốn khôi phục khoản chi này không?',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Khôi phục',
+          style: 'default',
+          onPress: async () => {
+            try {
+              await restoreExpense(id);
+              await loadDeletedExpenses(); // Tải lại danh sách đã xóa
+            } catch (error) {
+              console.error('Lỗi khi khôi phục:', error);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const renderItem = ({ item }: { item: ExpenseItem }) => (
-    <View style={styles.itemContainer}>
-      <View style={styles.itemInfo}>
-        <Text style={styles.itemTitle}>{item.title}</Text>
-        <Text style={styles.itemDate}>{item.createdAt}</Text>
+    // (Câu 8a) Bọc item trong Pressable
+    <Pressable onLongPress={() => handleRestorePress(item.id)}>
+      <View style={styles.itemContainer}>
+        <View style={styles.itemInfo}>
+          <Text style={styles.itemTitle}>{item.title}</Text>
+          <Text style={styles.itemDate}>{item.createdAt}</Text>
+        </View>
+        <View>
+          <Text 
+            style={[
+              styles.itemAmount,
+              item.type === 'thu' ? styles.thu : styles.chi
+            ]}
+          >
+            {item.type === 'thu' ? '+' : '-'} {item.amount.toLocaleString('vi-VN')} đ
+          </Text>
+        </View>
       </View>
-      <View>
-        <Text 
-          style={[
-            styles.itemAmount,
-            item.type === 'thu' ? styles.thu : styles.chi
-          ]}
-        >
-          {item.type === 'thu' ? '+' : '-'} {item.amount.toLocaleString('vi-VN')} đ
-        </Text>
-      </View>
-    </View>
+    </Pressable>
   );
 
   return (

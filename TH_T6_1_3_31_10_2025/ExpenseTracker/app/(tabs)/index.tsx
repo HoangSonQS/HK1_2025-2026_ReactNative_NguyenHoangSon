@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { StyleSheet, Text, View, FlatList, ActivityIndicator, Pressable, Alert, TextInput } from 'react-native';
+import { StyleSheet, Text, View, FlatList, ActivityIndicator, Pressable, Alert, TextInput, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, Link } from 'expo-router'; 
 import { initDB, getExpenses, ExpenseItem, softDeleteExpense, searchExpenses } from '../../services/database';
@@ -8,6 +8,7 @@ export default function HomeScreen() {
   const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const loadExpenses = useCallback(async () => {
     // Chỉ bật spinner nếu là lần tải đầu (tránh giật khi gõ)
@@ -87,6 +88,14 @@ export default function HomeScreen() {
       </Pressable>
     </Link>
   );
+  
+  //onRefresh (Câu 7a, 7b)
+  const onRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    setSearchQuery(''); 
+    await loadExpenses();
+    setIsRefreshing(false);
+  }, [loadExpenses]);
 
   if (isLoading) {
     return (
@@ -118,6 +127,13 @@ export default function HomeScreen() {
           <Text style={styles.emptyText}>
             {searchQuery ? 'Không tìm thấy kết quả.' : 'Chưa có khoản thu/chi nào.'}
           </Text>
+        }
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            colors={['blue']} // Màu của spinner (tùy chọn)
+          />
         }
       />
     </SafeAreaView>

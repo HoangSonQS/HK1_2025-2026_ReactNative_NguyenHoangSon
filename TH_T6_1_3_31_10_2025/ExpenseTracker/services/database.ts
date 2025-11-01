@@ -112,3 +112,12 @@ export const searchDeletedExpenses = async (query: string) => {
   );
   return allRows;
 };
+
+// (Câu 8) Hàm khôi phục khoản chi
+export const restoreExpense = async (id: number) => {
+  const result = await db.runAsync(
+    `UPDATE expenses SET isDeleted = 0 WHERE id = ?;`,
+    [id]
+  );
+  return result;
+};
