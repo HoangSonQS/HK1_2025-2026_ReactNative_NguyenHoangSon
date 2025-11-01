@@ -8,6 +8,7 @@ export default function RootLayout() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Thêm Khoản Mới' }} />
+        <Stack.Screen name="edit/[id]" options={{ title: 'Chỉnh Sửa Khoản Chi' }} />
       </Stack>
     </SafeAreaProvider>
   );

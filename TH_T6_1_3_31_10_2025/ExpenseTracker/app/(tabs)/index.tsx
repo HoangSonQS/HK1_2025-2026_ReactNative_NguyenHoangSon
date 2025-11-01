@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
-import { StyleSheet, Text, View, FlatList, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, FlatList, ActivityIndicator, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from 'expo-router'; 
+import { useFocusEffect, Link } from 'expo-router'; 
 import { initDB, getExpenses, ExpenseItem } from '../../services/database'; 
 
 export default function HomeScreen() {
@@ -30,22 +30,27 @@ export default function HomeScreen() {
 
   // (Câu 2) Hàm render mỗi item
   const renderItem = ({ item }: { item: ExpenseItem }) => (
-    <View style={styles.itemContainer}>
-      <View style={styles.itemInfo}>
-        <Text style={styles.itemTitle}>{item.title}</Text>
-        <Text style={styles.itemDate}>{item.createdAt}</Text>
-      </View>
-      <View>
-        <Text 
-          style={[
-            styles.itemAmount,
-            item.type === 'thu' ? styles.thu : styles.chi
-          ]}
-        >
-          {item.type === 'thu' ? '+' : '-'} {item.amount.toLocaleString('vi-VN')} đ
-        </Text>
-      </View>
-    </View>
+    // (Câu 4a) Bọc item trong Link, trỏ đến /edit/[id]
+    <Link href={`/edit/${item.id}`} asChild>
+      <Pressable>
+        <View style={styles.itemContainer}>
+          <View style={styles.itemInfo}>
+            <Text style={styles.itemTitle}>{item.title}</Text>
+            <Text style={styles.itemDate}>{item.createdAt}</Text>
+          </View>
+          <View>
+            <Text 
+              style={[
+                styles.itemAmount,
+                item.type === 'thu' ? styles.thu : styles.chi
+              ]}
+            >
+              {item.type === 'thu' ? '+' : '-'} {item.amount.toLocaleString('vi-VN')} đ
+            </Text>
+          </View>
+        </View>
+      </Pressable>
+    </Link>
   );
 
   if (isLoading) {

@@ -50,3 +50,19 @@ export const getExpenses = async () => {
   );
   return allRows;
 };
+
+export const getExpenseById = async (id: number) => {
+  const row: ExpenseItem | null = await db.getFirstAsync<ExpenseItem>(
+    `SELECT * FROM expenses WHERE id = ?;`,
+    [id]
+  );
+  return row;
+};
+
+export const updateExpense = async (id: number, title: string, amount: number, type: 'thu' | 'chi') => {
+  const result = await db.runAsync(
+    `UPDATE expenses SET title = ?, amount = ?, type = ? WHERE id = ?;`,
+    [title, amount, type, id]
+  );
+  return result;
+};
