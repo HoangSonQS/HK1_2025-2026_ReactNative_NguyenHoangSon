@@ -1,24 +1,32 @@
-import React from 'react';
-import { StyleSheet, Text, View, FlatList } from 'react-native';
-// Câu 1b: Import SafeAreaView
+import React, { useState, useCallback } from 'react';
+import { StyleSheet, Text, View, FlatList, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-// (Câu 2) Định nghĩa kiểu dữ liệu cho một Khoản chi
-export interface ExpenseItem {
-  id: number;
-  title: string;       // [cite: 15]
-  amount: number;      // [cite: 16]
-  createdAt: string;   // [cite: 17]
-  type: 'thu' | 'chi'; // [cite: 18]
-}
-
-// Dữ liệu mẫu
-const MOCK_DATA: ExpenseItem[] = [
-  { id: 1, title: 'Tiền ăn trưa', amount: 50000, createdAt: '01/11/2025', type: 'chi' },
-  { id: 2, title: 'Lương tháng 10', amount: 1000000, createdAt: '01/11/2025', type: 'thu' },
-];
+import { useFocusEffect } from 'expo-router'; 
+import { initDB, getExpenses, ExpenseItem } from '../../services/database'; 
 
 export default function HomeScreen() {
+  const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadExpenses = useCallback(async () => {
+    try {
+      await initDB(); 
+      const fetchedExpenses = await getExpenses();
+      setExpenses(fetchedExpenses);
+    } catch (error) {
+      console.error('Lỗi khi tải expenses:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+
+  useFocusEffect(
+    useCallback(() => {
+      setIsLoading(true);
+      loadExpenses();
+    }, [loadExpenses])
+  );
 
   // (Câu 2) Hàm render mỗi item
   const renderItem = ({ item }: { item: ExpenseItem }) => (
@@ -40,23 +48,37 @@ export default function HomeScreen() {
     </View>
   );
 
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.containerCenter}>
+        <ActivityIndicator size="large" color="blue" />
+      </SafeAreaView>
+    );
+  }
+
   return (
-    // Câu 1b: Dùng SafeAreaView
     <SafeAreaView style={styles.container} edges={['top']}>
       <FlatList
-        data={MOCK_DATA}
+        data={expenses}
         renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContent}
+        ListEmptyComponent={<Text style={styles.emptyText}>Chưa có khoản thu/chi nào.</Text>}
       />
     </SafeAreaView>
   );
 }
 
+// Thêm 2 style này
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  containerCenter: { // Mới
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   listContent: {
     padding: 20,
@@ -91,5 +113,11 @@ const styles = StyleSheet.create({
   },
   chi: {
     color: 'red',
+  },
+  emptyText: { // Mới
+    textAlign: 'center',
+    marginTop: 50,
+    fontSize: 16,
+    color: '#888',
   },
 });
