@@ -1,36 +1,45 @@
 import React, { useState, useCallback } from 'react';
-import { StyleSheet, Text, View, FlatList, ActivityIndicator } from 'react-native';
+// 1. Import TextInput
+import { StyleSheet, Text, View, FlatList, ActivityIndicator, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
-import { getDeletedExpenses, ExpenseItem } from '../../services/database';
+// 2. Import hàm searchDeletedExpenses
+import { getDeletedExpenses, ExpenseItem, searchDeletedExpenses } from '../../services/database';
 
 export default function TrashScreen() {
   const [deletedExpenses, setDeletedExpenses] = useState<ExpenseItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Hàm tải các khoản đã xóa
+  // 3. Thêm state cho tìm kiếm
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // 4. CẬP NHẬT HÀM loadDeletedExpenses
   const loadDeletedExpenses = useCallback(async () => {
+    if (searchQuery.trim() === '') {
+      setIsLoading(true);
+    }
     try {
-      const fetchedExpenses = await getDeletedExpenses();
+      let fetchedExpenses;
+      if (searchQuery.trim() !== '') {
+        fetchedExpenses = await searchDeletedExpenses(searchQuery);
+      } else {
+        fetchedExpenses = await getDeletedExpenses();
+      }
       setDeletedExpenses(fetchedExpenses);
     } catch (error) {
       console.error('Lỗi khi tải khoản đã xóa:', error);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [searchQuery]);
 
-  // Tải lại khi focus màn hình này
   useFocusEffect(
     useCallback(() => {
-      setIsLoading(true);
       loadDeletedExpenses();
     }, [loadDeletedExpenses])
   );
 
-  // Hàm render (gần giống màn hình chính)
   const renderItem = ({ item }: { item: ExpenseItem }) => (
-    // Chúng ta sẽ thêm Pressable ở đây cho Câu 8 (Restore)
     <View style={styles.itemContainer}>
       <View style={styles.itemInfo}>
         <Text style={styles.itemTitle}>{item.title}</Text>
@@ -49,32 +58,50 @@ export default function TrashScreen() {
     </View>
   );
 
-  if (isLoading) {
-    return (
-      <SafeAreaView style={styles.containerCenter}>
-        <ActivityIndicator size="large" color="blue" />
-      </SafeAreaView>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Tìm trong thùng rác..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+      </View>
+
       <FlatList
         data={deletedExpenses}
         renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContent}
-        ListEmptyComponent={<Text style={styles.emptyText}>Thùng rác trống.</Text>}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>
+            {searchQuery ? 'Không tìm thấy kết quả.' : 'Thùng rác trống.'}
+          </Text>
+        }
       />
     </SafeAreaView>
   );
 }
 
-// Dùng chung style với màn hình index
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  searchContainer: { // Mới
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    backgroundColor: '#f5f5f5',
+  },
+  searchInput: { // Mới
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 10,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
   containerCenter: {
     flex: 1,
@@ -83,6 +110,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 20,
+    paddingTop: 10,
   },
   itemContainer: {
     backgroundColor: '#ffffff',

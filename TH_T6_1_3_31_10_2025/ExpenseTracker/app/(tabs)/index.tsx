@@ -1,31 +1,45 @@
 import React, { useState, useCallback } from 'react';
-import { StyleSheet, Text, View, FlatList, ActivityIndicator, Pressable, Alert } from 'react-native';
+import { StyleSheet, Text, View, FlatList, ActivityIndicator, Pressable, Alert, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, Link } from 'expo-router'; 
-import { initDB, getExpenses, ExpenseItem, softDeleteExpense } from '../../services/database';
+import { initDB, getExpenses, ExpenseItem, softDeleteExpense, searchExpenses } from '../../services/database';
 
 export default function HomeScreen() {
   const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const loadExpenses = useCallback(async () => {
+    // Chỉ bật spinner nếu là lần tải đầu (tránh giật khi gõ)
+    if (searchQuery.trim() === '') {
+      setIsLoading(true);
+    }
+    
     try {
       await initDB(); 
-      const fetchedExpenses = await getExpenses();
+      let fetchedExpenses;
+      
+      // Nếu có nội dung tìm kiếm, gọi searchExpenses
+      if (searchQuery.trim() !== '') {
+        fetchedExpenses = await searchExpenses(searchQuery);
+      } else {
+        // Nếu không, tải tất cả
+        fetchedExpenses = await getExpenses();
+      }
       setExpenses(fetchedExpenses);
+
     } catch (error) {
       console.error('Lỗi khi tải expenses:', error);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [searchQuery]);
 
 
   useFocusEffect(
     useCallback(() => {
-      setIsLoading(true);
       loadExpenses();
-    }, [loadExpenses])
+    }, [loadExpenses]) // loadNotes đã bao gồm searchQuery
   );
 
   const handleDeletePress = (id: number) => {
@@ -84,12 +98,27 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      
+      {/* (Câu 6a) Thêm Thanh tìm kiếm */}
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Tìm kiếm theo tên khoản chi..."
+          value={searchQuery}
+          onChangeText={setSearchQuery} // Cập nhật state khi gõ
+        />
+      </View>
+
       <FlatList
         data={expenses}
         renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContent}
-        ListEmptyComponent={<Text style={styles.emptyText}>Chưa có khoản thu/chi nào.</Text>}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>
+            {searchQuery ? 'Không tìm thấy kết quả.' : 'Chưa có khoản thu/chi nào.'}
+          </Text>
+        }
       />
     </SafeAreaView>
   );
@@ -100,6 +129,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
+  searchContainer: { // Mới
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    backgroundColor: '#f5f5f5',
+  },
+  searchInput: { // Mới
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 10,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
   containerCenter: {
     flex: 1,
     justifyContent: 'center',
@@ -107,6 +149,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 20,
+    paddingTop: 10,
   },
   itemContainer: {
     backgroundColor: '#ffffff',

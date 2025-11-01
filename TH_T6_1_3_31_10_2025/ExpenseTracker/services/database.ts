@@ -51,6 +51,7 @@ export const getExpenses = async () => {
   return allRows;
 };
 
+// Hàm lấy khoản chi theo ID
 export const getExpenseById = async (id: number) => {
   const row: ExpenseItem | null = await db.getFirstAsync<ExpenseItem>(
     `SELECT * FROM expenses WHERE id = ?;`,
@@ -59,6 +60,7 @@ export const getExpenseById = async (id: number) => {
   return row;
 };
 
+// (Câu 5a) Hàm cập nhật khoản chi
 export const updateExpense = async (id: number, title: string, amount: number, type: 'thu' | 'chi') => {
   const result = await db.runAsync(
     `UPDATE expenses SET title = ?, amount = ?, type = ? WHERE id = ?;`,
@@ -67,6 +69,7 @@ export const updateExpense = async (id: number, title: string, amount: number, t
   return result;
 };
 
+// (Câu 5b) Hàm xóa mềm khoản chi
 export const softDeleteExpense = async (id: number) => {
   // Dùng UPDATE để đánh dấu là đã xóa (isDeleted = 1)
   const result = await db.runAsync(
@@ -80,6 +83,32 @@ export const softDeleteExpense = async (id: number) => {
 export const getDeletedExpenses = async () => {
   const allRows: ExpenseItem[] = await db.getAllAsync<ExpenseItem>(
     `SELECT * FROM expenses WHERE isDeleted = 1 ORDER BY id DESC;`
+  );
+  return allRows;
+};
+
+// (Câu 6a) Hàm tìm kiếm các khoản CHƯA xóa
+export const searchExpenses = async (query: string) => {
+  const likeQuery = `%${query}%`;
+  const allRows: ExpenseItem[] = await db.getAllAsync<ExpenseItem>(
+    `SELECT * FROM expenses 
+     WHERE title LIKE ?
+     AND isDeleted = 0 
+     ORDER BY id DESC;`,
+    [likeQuery]
+  );
+  return allRows;
+};
+
+// (Câu 6b) Hàm tìm kiếm các khoản ĐÃ xóa
+export const searchDeletedExpenses = async (query: string) => {
+  const likeQuery = `%${query}%`;
+  const allRows: ExpenseItem[] = await db.getAllAsync<ExpenseItem>(
+    `SELECT * FROM expenses 
+     WHERE title LIKE ?
+     AND isDeleted = 1 
+     ORDER BY id DESC;`,
+    [likeQuery]
   );
   return allRows;
 };
